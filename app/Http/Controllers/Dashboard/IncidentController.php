@@ -18,6 +18,7 @@ use CachetHQ\Cachet\Bus\Commands\Incident\UpdateIncidentCommand;
 use CachetHQ\Cachet\Models\Component;
 use CachetHQ\Cachet\Models\ComponentGroup;
 use CachetHQ\Cachet\Models\Incident;
+use CachetHQ\Cachet\Models\IncidentsHistories;
 use CachetHQ\Cachet\Models\IncidentTemplate;
 use GrahamCampbell\Binput\Facades\Binput;
 use Illuminate\Routing\Controller;
@@ -125,6 +126,20 @@ class IncidentController extends Controller
                 ->withTitle(sprintf('%s %s', trans('dashboard.notifications.whoops'), trans('dashboard.incidents.add.failure')))
                 ->withErrors($e->getMessageBag());
         }
+
+        // Fill the IncidentsHistories Table with our new incident
+        $incidentsCollection = Incident::all();
+        foreach ($incidentsCollection as $incident);
+        $attributes = $incident['attributes'];
+
+        $incidentsHistoriesAttributes = array(
+            'incidents_id' => $attributes['id'],
+            'status' => $attributes['status'],
+            'message' => $attributes['message'],
+            'created_at' => $attributes['created_at'],
+            'updated_at' => $attributes['updated_at']
+        );
+        IncidentsHistories::create($incidentsHistoriesAttributes);
 
         return Redirect::route('dashboard.incidents.index')
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.add.success')));
