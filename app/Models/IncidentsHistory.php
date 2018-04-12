@@ -12,8 +12,9 @@ namespace CachetHQ\Cachet\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use CachetHQ\Cachet\Presenters\IncidentsHistoryPresenter;
 
-class IncidentsHistories extends Model
+class IncidentsHistory extends Model
 {
     use SoftDeletes;
     /**
@@ -94,5 +95,15 @@ class IncidentsHistories extends Model
     public function scopeForIncident(Builder $query, $incidents_id)
     {
         return $query->where('incidents_id', $incidents_id);
+    }
+
+    /**
+     * Get the presenter class.
+     *
+     * @return string
+     */
+    public function getPresenterClass()
+    {
+        return IncidentsHistoryPresenter::class;
     }
 }

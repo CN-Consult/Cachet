@@ -160,4 +160,14 @@ class Incident extends Model implements HasPresenter
     {
         return IncidentPresenter::class;
     }
+
+    /**
+     * Generates a relation between incidents and incidentsHistory.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function history()
+    {
+        return $this->hasMany('CachetHQ\Cachet\Models\IncidentsHistory', 'incidents_id','id');
+    }
 }

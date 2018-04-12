@@ -18,7 +18,7 @@ use CachetHQ\Cachet\Bus\Commands\Incident\UpdateIncidentCommand;
 use CachetHQ\Cachet\Models\Component;
 use CachetHQ\Cachet\Models\ComponentGroup;
 use CachetHQ\Cachet\Models\Incident;
-use CachetHQ\Cachet\Models\IncidentsHistories;
+use CachetHQ\Cachet\Models\IncidentsHistory;
 use CachetHQ\Cachet\Models\IncidentTemplate;
 use GrahamCampbell\Binput\Facades\Binput;
 use Illuminate\Routing\Controller;
@@ -139,7 +139,7 @@ class IncidentController extends Controller
             'created_at' => $attributes['created_at'],
             'updated_at' => $attributes['updated_at']
         );
-        IncidentsHistories::create($incidentsHistoriesAttributes);
+        IncidentsHistory::create($incidentsHistoriesAttributes);
 
         return Redirect::route('dashboard.incidents.index')
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.add.success')));
@@ -217,9 +217,9 @@ class IncidentController extends Controller
         dispatch(new RemoveIncidentCommand($incident));
 
         $incidentAttributes = $incident['attributes'];
-        $incidentsHistoriesCollection = IncidentsHistories::all();
+        $incidentsHistoriesCollection = IncidentsHistory::all();
 
-        /** @var IncidentsHistories $incidentsHistory */
+        /** @var IncidentsHistory $incidentsHistory */
         foreach ($incidentsHistoriesCollection as $incidentsHistory)
         {
             $incidentsHistoryAttributes = $incidentsHistory['attributes'];
@@ -284,9 +284,9 @@ class IncidentController extends Controller
 
         // Update the IncidentsHistories Table
         $incidentAttributes = $incident['attributes'];
-        $incidentsHistoriesCollection = IncidentsHistories::all();
+        $incidentsHistoriesCollection = IncidentsHistory::all();
 
-        /** @var IncidentsHistories $incidentsHistory */
+        /** @var IncidentsHistory $incidentsHistory */
         foreach ($incidentsHistoriesCollection as $incidentsHistory)
         {
             $incidentsHistoryAttributes = $incidentsHistory['attributes'];
