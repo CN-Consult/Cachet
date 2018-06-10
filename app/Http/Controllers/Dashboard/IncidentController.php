@@ -18,6 +18,7 @@ use CachetHQ\Cachet\Bus\Commands\Incident\UpdateIncidentCommand;
 use CachetHQ\Cachet\Models\Component;
 use CachetHQ\Cachet\Models\ComponentGroup;
 use CachetHQ\Cachet\Models\Incident;
+use CachetHQ\Cachet\Models\IncidentsHistory;
 use CachetHQ\Cachet\Models\IncidentTemplate;
 use GrahamCampbell\Binput\Facades\Binput;
 use Illuminate\Routing\Controller;
@@ -100,7 +101,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Creates a new incident.
+     * Creates a new incident and saves it in incidentsHistories.
      *
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -125,6 +126,20 @@ class IncidentController extends Controller
                 ->withTitle(sprintf('%s %s', trans('dashboard.notifications.whoops'), trans('dashboard.incidents.add.failure')))
                 ->withErrors($e->getMessageBag());
         }
+
+        // Fill the IncidentsHistories Table with our new incident
+        $incidentsCollection = Incident::all();
+        foreach ($incidentsCollection as $incident);
+        $attributes = $incident['attributes'];
+
+        $incidentsHistoriesAttributes = array(
+            'incidents_id' => $attributes['id'],
+            'status' => $attributes['status'],
+            'message' => $attributes['message'],
+            'created_at' => $attributes['created_at'],
+            'updated_at' => $attributes['updated_at']
+        );
+        IncidentsHistory::create($incidentsHistoriesAttributes);
 
         return Redirect::route('dashboard.incidents.index')
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.add.success')));
@@ -191,7 +206,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Deletes a given incident.
+     * Soft deletes a given incident and the incidentsHistory.
      *
      * @param \CachetHQ\Cachet\Models\Incident $incident
      *
@@ -200,6 +215,20 @@ class IncidentController extends Controller
     public function deleteIncidentAction(Incident $incident)
     {
         dispatch(new RemoveIncidentCommand($incident));
+
+        $incidentAttributes = $incident['attributes'];
+        $incidentsHistoriesCollection = IncidentsHistory::all();
+
+        /** @var IncidentsHistory $incidentsHistory */
+        foreach ($incidentsHistoriesCollection as $incidentsHistory)
+        {
+            $incidentsHistoryAttributes = $incidentsHistory['attributes'];
+            if ($incidentsHistoryAttributes['incidents_id'] == $incidentAttributes['id'])
+            {
+                $incidentsHistory->delete();
+            }
+        }
+
 
         return Redirect::route('dashboard.incidents.index')
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.delete.success')));
@@ -222,7 +251,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Edit an incident.
+     * Edit an incident and update the incidentsHistories.
      *
      * @param \CachetHQ\Cachet\Models\Incident $incident
      *
@@ -251,8 +280,27 @@ class IncidentController extends Controller
                 ->withErrors($e->getMessageBag());
         }
 
-        if ($incident->component) {
-            $incident->component->update(['status' => Binput::get('component_status')]);
+        if ($incident->component) $incident->component->update(['status' => Binput::get('component_status')]);
+
+        // Update the IncidentsHistories Table
+        $incidentAttributes = $incident['attributes'];
+        $incidentsHistoriesCollection = IncidentsHistory::all();
+
+        /** @var IncidentsHistory $incidentsHistory */
+        foreach ($incidentsHistoriesCollection as $incidentsHistory)
+        {
+            $incidentsHistoryAttributes = $incidentsHistory['attributes'];
+            if ($incidentsHistoryAttributes['incidents_id'] == $incidentAttributes['id'])
+            {
+                $incidentsHistoriesAttributes = array(
+                    'incidents_id' => $incidentAttributes['id'],
+                    'status' => $incidentAttributes['status'],
+                    'message' => $incidentAttributes['message'],
+                    'created_at' => $incidentAttributes['created_at'],
+                    'updated_at' => $incidentAttributes['updated_at']
+                );
+                $incidentsHistory->create($incidentsHistoriesAttributes);
+            }
         }
 
         return Redirect::route('dashboard.incidents.edit', ['id' => $incident->id])
