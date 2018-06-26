@@ -162,7 +162,7 @@ class Incident extends Model implements HasPresenter
     }
 
     /**
-     * Generates a relation between incidents and incidentsHistory.
+     * Generates a relation between Incidents and IncidentsHistory.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
