@@ -11,6 +11,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * This should have been generated, but it is handwritten, since i didn't know how the migrations in laravel work.
+ * It creates the table 'downtimes' in the database.
+ */
 class CreateDowntimeTable extends Migration
 {
     /**
@@ -20,7 +24,6 @@ class CreateDowntimeTable extends Migration
     {
         Schema::create('downtimes', function (Blueprint $table) {
             $table->engine = 'InnoDB';
-
             $table->increments('id');
             $table->timestamps();
             $table->dateTime('resolved_at')->nullable();

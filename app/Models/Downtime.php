@@ -11,6 +11,10 @@ namespace CachetHQ\Cachet\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * This is a model for the database table downtimes.
+ * It tracks the duration of our system not working properly.
+ */
 class Downtime extends Model
 {
     /**
@@ -20,7 +24,7 @@ class Downtime extends Model
      */
     protected $fillable = [
         'created_at',
-        'resolved_at',
+        'resolved_at'
     ];
 
     /**
@@ -29,7 +33,7 @@ class Downtime extends Model
      * @var string[]
      */
     public $rules = [
-        'resolved_at'      => 'optional|null',
+        'resolved_at' => 'optional|null'
     ];
 
     /**
@@ -40,7 +44,7 @@ class Downtime extends Model
     protected $searchable = [
         'id',
         'created_at',
-        'resolved_at',
+        'resolved_at'
     ];
 
     /**
@@ -51,6 +55,6 @@ class Downtime extends Model
     protected $sortable = [
         'id',
         'created_at',
-        'resolved_at',
+        'resolved_at'
     ];
 }

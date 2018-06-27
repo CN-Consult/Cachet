@@ -3,7 +3,6 @@
         <div class="panel-heading">
             <strong>{{ trans('cachet.uptime.uptime') }}</strong>
         </div>
-
     </div>
 </div>
 

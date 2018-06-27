@@ -101,14 +101,14 @@ class ScheduleController extends Controller
                 Binput::get('notify'),
                 Binput::get('scheduled_at')
             ));
-            $incidentsHistoriesAttributes = array(
+            $incidentHistoryAttributes = array(
                 'incidents_id' => $incident['id'],
                 'status' => $incident['status'],
                 'message' => $incident['message'],
                 'created_at' => $incident['created_at'],
                 'updated_at' => $incident['updated_at']
             );
-            IncidentsHistory::create($incidentsHistoriesAttributes);
+            IncidentsHistory::create($incidentHistoryAttributes);
         } catch (ValidationException $e) {
             return Redirect::route('dashboard.schedule.add')
                 ->withInput(Binput::all())

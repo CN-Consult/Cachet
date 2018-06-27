@@ -18,6 +18,7 @@ use CachetHQ\Cachet\Models\Downtime;
 use CachetHQ\Cachet\Models\Incident;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 
 /**
  * This is the status page composer.
@@ -67,60 +68,46 @@ class StatusPageComposer
         // Downtime stats for uptime table
         $availability = array();
 
-
-        $now = Carbon::now();
-        $startOfDay=clone $now;
+        $startOfDay = Carbon::now();
+        $endOfDay = Carbon::now();
         $startOfDay->setTime(0,0,0);
-        $endOfDay=clone $now;
         $endOfDay->setTime(23,59,59);
-        $rangeToday = array();
-        array_push($rangeToday, $startOfDay);
-        array_push($rangeToday, $endOfDay);
 
         //Today
         $downtimeCollectionToday = Downtime::whereBetween('created_at', [$startOfDay, $endOfDay])
                                             ->orWhereBetween('resolved_at', [$startOfDay, $endOfDay])
                                             ->get();
-        array_push($availability, $this->calculateAvailability($downtimeCollectionToday, $rangeToday));
-
+        array_push($availability, $this->calculateAvailability($downtimeCollectionToday, $startOfDay, $endOfDay));
 
         // Last week
-        $last7Days = array();
-        $last7Days[0] = date("Y-m-d", strtotime("7 days ago"));
-        $last7Days[1] = $endOfDay;
-        $downtimeCollectionLastWeek = Downtime::whereBetween('created_at', [$last7Days[0], $last7Days[1]])
-                                                ->orWhereBetween('resolved_at', [$last7Days[0], $last7Days[1]])
+        $startOfWeek = date("Y-m-d", strtotime("7 days ago"));
+        $downtimeCollectionLastWeek = Downtime::whereBetween('created_at', [$startOfWeek, $endOfDay])
+                                                ->orWhereBetween('resolved_at', [$startOfWeek, $endOfDay])
                                                 ->get();
-        array_push($availability, $this->calculateAvailability($downtimeCollectionLastWeek, $last7Days));
+        array_push($availability, $this->calculateAvailability($downtimeCollectionLastWeek, $startOfWeek, $endOfDay));
 
         // Last month
-        $last30Days = array();
-        $last30Days[0] = date("Y-m-d", strtotime("30 days ago"));
-        $last30Days[1] = $endOfDay;
-        $downtimeCollectionLastMonth = Downtime::whereBetween('created_at', [$last30Days[0], $last30Days[1]])
-                                                ->orWhereIn('resolved_at', [$last30Days[0], $last30Days[1]])
+        $startOfMonth = date("Y-m-d", strtotime("30 days ago"));
+        $downtimeCollectionLastMonth = Downtime::whereBetween('created_at', [$startOfMonth, $endOfDay])
+                                                ->orWhereIn('resolved_at', [$startOfMonth, $endOfDay])
                                                 ->get();
 
-        array_push($availability, $this->calculateAvailability($downtimeCollectionLastMonth, $last30Days));
+        array_push($availability, $this->calculateAvailability($downtimeCollectionLastMonth, $startOfMonth, $endOfDay));
 
         // Current year
-        $currentYear = array();
-        $currentYear[0] = date("Y-m-d", strtotime("first day of january this year"));
-        $currentYear[1] = $endOfDay;
+        $startOfCurrentYear = date("Y-m-d", strtotime("first day of january this year"));
         $downtimeCollectionCurrentYear = Downtime::where('created_at', "like", date("Y")."-%")
                                                 ->orWhere('resolved_at', "like", date("Y")."-%")
                                                 ->get();
-        array_push($availability, $this->calculateAvailability($downtimeCollectionCurrentYear, $currentYear));
+        array_push($availability, $this->calculateAvailability($downtimeCollectionCurrentYear, $startOfCurrentYear, $endOfDay));
 
         // Last year
-        $lastYear = array();
-        $lastYear[0] = date("Y-m-d", strtotime("first day of january last year"));
-        $lastYear[1] = date("Y-m-d", strtotime("last day of december last year"));
+        $startOfLastYear = date("Y-m-d", strtotime("first day of january last year"));
+        $endOfLastYear = date("Y-m-d", strtotime("last day of december last year"));
         $downtimeCollectionLastYear = Downtime::where('created_at', "like", date("Y", strtotime("-1 year"))."-%")
                                                 ->orWhere('resolved_at', "like", date("Y", strtotime("-1 year"))."-%")
                                                 ->get();
-        array_push($availability, $this->calculateAvailability($downtimeCollectionLastYear, $lastYear));
-
+        array_push($availability, $this->calculateAvailability($downtimeCollectionLastYear, $startOfLastYear, $endOfLastYear));
 
         $view->with($status)
             ->withComponentGroups($componentGroups)
@@ -129,24 +116,31 @@ class StatusPageComposer
             ->withUptimeStats($availability);
     }
 
-    private function calculateAvailability($_downtimeCollection, $_range)
+    /**
+     * This function calculates the uptime percentage for a given timespan.
+     *
+     * @param $_downtimeCollection \Illuminate\Database\Eloquent\Collection A Collection of downtimes
+     * @param $_start String Start of the timespan we want to check
+     * @param $_end String End of the timespan we want to check
+     * @return string Uptime in percent
+     */
+    private function calculateAvailability($_downtimeCollection, $_start, $_end)
     {
         $availability = 100;
 
-        $start = Carbon::parse($_range[0]);
-        $end = Carbon::parse($_range[1]);
+        $start = Carbon::parse($_start);
+        $end = Carbon::parse($_end);
 
         $daysInRange = $start->diffInDays($end);
 
-
         foreach ($_downtimeCollection as $downtime)
         {
-            // The begin of the downtime is older than today
+            // The begin of the downtime is older than start day
             if ($downtime->created_at < $start) $downtime->created_at = $start;
 
             // The downtime isn't resolved yet so we use the downtime till now
             if ($downtime->resolved_at === null) $downtime->resolved_at = Carbon::now();
-            // The end of the downtime reaches further than today (This shouldn't be possible but i keep it if someone makes a mistake)
+            // The end of the downtime reaches further than today (This shouldn't be possible but I keep it if someone makes a mistake)
             else if ($downtime->resolved_at > $end) $downtime->resolved_at = $end;
 
             if (!$downtime->resolved_at instanceof Carbon) $downtime->resolved_at = Carbon::createFromFormat("Y-m-d H:i:s", $downtime->resolved_at);

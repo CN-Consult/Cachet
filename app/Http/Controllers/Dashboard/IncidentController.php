@@ -123,14 +123,14 @@ class IncidentController extends Controller
                 null
             ));
             // Add the new incident to incidentHistory
-            $incidentsHistoriesAttributes = array(
+            $incidentHistoryAttributes = array(
                 'incidents_id' => $incident['id'],
                 'status' => $incident['status'],
                 'message' => $incident['message'],
                 'created_at' => $incident['created_at'],
                 'updated_at' => $incident['updated_at']
             );
-            IncidentsHistory::create($incidentsHistoriesAttributes);
+            IncidentsHistory::create($incidentHistoryAttributes);
 
             // Create a new downtime if no unresolved downtime exists
             if (!Downtime::whereNull('resolved_at')->first() && $incident['status'] != 4)
@@ -141,7 +141,6 @@ class IncidentController extends Controller
                 );
                 Downtime::create($downtimeAttributes);
             }
-
         } catch (ValidationException $e) {
             return Redirect::route('dashboard.incidents.add')
                 ->withInput(Binput::all())
@@ -334,8 +333,6 @@ class IncidentController extends Controller
             }
         }
         $incidentsHistory->create($incidentsHistoriesAttributes);
-
-
 
         return Redirect::route('dashboard.incidents.edit', ['id' => $incident->id])
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.edit.success')));
