@@ -16,7 +16,7 @@ use CachetHQ\Cachet\Presenters\IncidentsHistoryPresenter;
 
 /**
  * This is a model for the database table incidents_histories.
- * Which tracks all changes done to an incident.
+ * It tracks all changes done to an incident.
  */
 class IncidentsHistory extends Model
 {
