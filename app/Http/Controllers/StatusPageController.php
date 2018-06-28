@@ -117,9 +117,9 @@ class StatusPageController extends AbstractApiController
 
     /**
      * Shows an incident in more detail.
-     * Also converts incidentsHistory objects to incidentsHistoryPresenter object for the view.
+     * Also converts IncidentsHistory objects to IncidentsHistoryPresenter object for the view.
      *
-     * @param \CachetHQ\Cachet\Models\Incident           $incident
+     * @param \CachetHQ\Cachet\Models\Incident $incident
      *
      * @return \Illuminate\View\View
      */
