@@ -101,7 +101,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Creates a new incident and saves it in incidentsHistories.
+     * Creates a new incident and saves it in incidentHistories.
      *
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -127,7 +127,8 @@ class IncidentController extends Controller
                 ->withErrors($e->getMessageBag());
         }
 
-        // Fill the IncidentsHistories Table with our new incident
+        // On every action on an Incident, we create a related entry into the IncidentHistories table.
+        // That allows us to show the complete history of an Incident.
         $incidentsCollection = Incident::all();
         foreach ($incidentsCollection as $incident);
         $attributes = $incident['attributes'];
@@ -224,7 +225,7 @@ class IncidentController extends Controller
         {
             $incidentsHistoryAttributes = $incidentsHistory['attributes'];
             if ($incidentsHistoryAttributes['incidents_id'] == $incidentAttributes['id'])
-            {
+            {// found matching IncidentHistory, delete it...
                 $incidentsHistory->delete();
             }
         }
@@ -251,7 +252,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Edit an incident and update the incidentsHistories.
+     * Edit an incident and update the incidentsHistory.
      *
      * @param \CachetHQ\Cachet\Models\Incident $incident
      *
@@ -282,7 +283,7 @@ class IncidentController extends Controller
 
         if ($incident->component) $incident->component->update(['status' => Binput::get('component_status')]);
 
-        // Update the IncidentsHistories Table
+        // Update the IncidentsHistories table
         $incidentAttributes = $incident['attributes'];
         $incidentsHistoriesCollection = IncidentsHistory::all();
 
@@ -291,7 +292,7 @@ class IncidentController extends Controller
         {
             $incidentsHistoryAttributes = $incidentsHistory['attributes'];
             if ($incidentsHistoryAttributes['incidents_id'] == $incidentAttributes['id'])
-            {
+            {// found matching IncidentHistory - do updates...
                 $incidentsHistoriesAttributes = array(
                     'incidents_id' => $incidentAttributes['id'],
                     'status' => $incidentAttributes['status'],

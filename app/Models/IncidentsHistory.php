@@ -14,6 +14,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use CachetHQ\Cachet\Presenters\IncidentsHistoryPresenter;
 
+/**
+ * This is a model for the database table incidents_histories.
+ * It tracks all changes done to an incident.
+ */
 class IncidentsHistory extends Model
 {
     use SoftDeletes;
@@ -75,7 +79,7 @@ class IncidentsHistory extends Model
     ];
 
     /**
-     * A incidentsHistories belongs to a incident.
+     * An IncidentsHistory belongs to an Incident.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
