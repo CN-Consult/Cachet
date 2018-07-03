@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "7a1afd058eaa8de54a68acbef8215037",
+    "content-hash": "1b91e148a5444bc6bfca93350e1ebc8d",
     "packages": [
         {
             "name": "alt-three/badger",
@@ -731,46 +731,6 @@
                 "preload"
             ],
             "time": "2016-09-16T12:50:15+00:00"
-        },
-        {
-            "name": "damianopetrungaro/cachet-sdk",
-            "version": "v1.0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/damianopetrungaro/CachetSDK.git",
-                "reference": "0b577df2be439c309d3dffb48f2dcd2cd2d179ba"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/damianopetrungaro/CachetSDK/zipball/0b577df2be439c309d3dffb48f2dcd2cd2d179ba",
-                "reference": "0b577df2be439c309d3dffb48f2dcd2cd2d179ba",
-                "shasum": ""
-            },
-            "require": {
-                "guzzlehttp/guzzle": "^6.2"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "@stable"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Damianopetrungaro\\CachetSDK\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Damiano Petrungaro",
-                    "email": "damianopetrungaro@gmail.com"
-                }
-            ],
-            "description": "A PHP SDK for Cachet, providing a full functionality access.",
-            "homepage": "https://github.com/damianopetrungaro/CachetSDK",
-            "time": "2016-06-09T10:30:56+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",

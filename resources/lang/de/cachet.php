@@ -132,6 +132,16 @@ return [
         ],
     ],
 
+    // Uptime
+    'uptime' => [
+        'uptime' => 'Verfügbarkeit',
+        'today' => 'Heute',
+        'last_week' => 'Letzte 7 Tage',
+        'last_month' => 'Letzte 30 Tage',
+        'current_year' => 'Aktuelles Jahr',
+        'last_year' => 'Letztes Jahr'
+    ],
+
     // Other
     'home'            => 'Startseite',
     'description'     => 'Bleiben sie up to date mit den neuesten Service-Updates von: app.',

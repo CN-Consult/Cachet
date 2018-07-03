@@ -132,6 +132,16 @@ return [
         ],
     ],
 
+    // Uptime
+    'uptime' => [
+        'uptime' => 'Uptime',
+        'today' => 'Today',
+        'last_week' => 'Last 7 Days',
+        'last_month' => 'Last 30 Days',
+        'current_year' => 'Current Year',
+        'last_year' => 'Last Year'
+    ],
+
     // Other
     'home'            => 'Home',
     'description'     => 'Stay up to date with the latest service updates from :app.',

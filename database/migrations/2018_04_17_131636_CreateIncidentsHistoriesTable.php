@@ -38,6 +38,6 @@ class CreateIncidentsHistoriesTable extends Migration
      */
     public function down()
     {
-        Schema::drop('incidents');
+        Schema::drop('incidents_histories');
     }
 }

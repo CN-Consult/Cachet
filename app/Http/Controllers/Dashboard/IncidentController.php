@@ -17,9 +17,11 @@ use CachetHQ\Cachet\Bus\Commands\Incident\ReportIncidentCommand;
 use CachetHQ\Cachet\Bus\Commands\Incident\UpdateIncidentCommand;
 use CachetHQ\Cachet\Models\Component;
 use CachetHQ\Cachet\Models\ComponentGroup;
+use CachetHQ\Cachet\Models\Downtime;
 use CachetHQ\Cachet\Models\Incident;
 use CachetHQ\Cachet\Models\IncidentsHistory;
 use CachetHQ\Cachet\Models\IncidentTemplate;
+use Carbon\Carbon;
 use GrahamCampbell\Binput\Facades\Binput;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Redirect;
@@ -120,6 +122,25 @@ class IncidentController extends Controller
                 null,
                 null
             ));
+            // Add the new incident to incidentHistory
+            $incidentHistoryAttributes = array(
+                'incidents_id' => $incident['id'],
+                'status' => $incident['status'],
+                'message' => $incident['message'],
+                'created_at' => $incident['created_at'],
+                'updated_at' => $incident['updated_at']
+            );
+            IncidentsHistory::create($incidentHistoryAttributes);
+
+            // Create a new downtime if no unresolved downtime exists
+            if (!Downtime::whereNull('resolved_at')->first() && $incident['status'] != 4)
+            {
+                $downtimeAttributes = array(
+                    'created_at' => $incident['created_at'],
+                    'resolved_at' => null
+                );
+                Downtime::create($downtimeAttributes);
+            }
         } catch (ValidationException $e) {
             return Redirect::route('dashboard.incidents.add')
                 ->withInput(Binput::all())
@@ -230,6 +251,14 @@ class IncidentController extends Controller
             }
         }
 
+        // End the current downtime if no incidents are left open
+        // Status 4 equals resolved
+        if (Incident::where('status', "<", 4)->get()->isEmpty())
+        {
+            $downtime = Downtime::whereNull('resolved_at')->first();
+            $downtime->resolved_at = Carbon::createFromDate($incidentsHistoryAttributes['deleted_at']);
+            $downtime->save();
+        }
 
         return Redirect::route('dashboard.incidents.index')
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.delete.success')));
@@ -274,6 +303,22 @@ class IncidentController extends Controller
                 null,
                 null
             ));
+
+            // We have an unresolved downtime and the incident gets resolved. Status 4
+            if (Downtime::whereNull('resolved_at')->first() && $incident['status'] == 4)
+            {
+                $downtime = Downtime::whereNull('resolved_at')->first();
+                $downtime->resolved_at = Carbon::createFromFormat("Y-m-d H:i:s", $incident->updated_at);
+                $downtime->save();
+            }
+            elseif (!Downtime::whereNull('resolved_at')->first() && $incident['status'] != 4)
+            {
+                $downtimeAttributes = array(
+                    'created_at' => $incident['created_at'],
+                    'resolved_at' => null
+                );
+                Downtime::create($downtimeAttributes);
+            }
         } catch (ValidationException $e) {
             return Redirect::route('dashboard.incidents.edit', ['id' => $incident->id])
                 ->withInput(Binput::all())
@@ -300,9 +345,9 @@ class IncidentController extends Controller
                     'created_at' => $incidentAttributes['created_at'],
                     'updated_at' => $incidentAttributes['updated_at']
                 );
-                $incidentsHistory->create($incidentsHistoriesAttributes);
             }
         }
+        $incidentsHistory->create($incidentsHistoriesAttributes);
 
         return Redirect::route('dashboard.incidents.edit', ['id' => $incident->id])
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.edit.success')));
