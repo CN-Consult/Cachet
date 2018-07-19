@@ -53,7 +53,8 @@
         "mockery/mockery": "0.9.9",
         "phpunit/phpunit": "4.8.21",
         "symfony/css-selector": "^3.0",
-        "symfony/dom-crawler": "^3.0"
+        "symfony/dom-crawler": "^3.0",
+        "andres-montanez/magallanes": "~1.0.1"
     },
     "autoload": {
         "classmap": [
