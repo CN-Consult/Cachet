@@ -1,0 +1,14 @@
+#production
+deployment:
+  user: deploy
+  from: ./
+  to: /var/www/cachet.dev.diloc.de/htdocs
+  excludes:
+hosts:
+  - web.dev.diloc.de:3222
+tasks:
+  pre-deploy:
+  on-deploy:
+  post-deploy:
+deployment:
+  strategy: targz
