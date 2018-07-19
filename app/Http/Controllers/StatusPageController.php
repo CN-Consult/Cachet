@@ -16,10 +16,13 @@ use CachetHQ\Cachet\Dates\DateFactory;
 use CachetHQ\Cachet\Http\Controllers\Api\AbstractApiController;
 use CachetHQ\Cachet\Models\Component;
 use CachetHQ\Cachet\Models\Incident;
+use CachetHQ\Cachet\Models\IncidentsHistory;
 use CachetHQ\Cachet\Models\Metric;
+use CachetHQ\Cachet\Presenters\IncidentsHistoryPresenter;
 use CachetHQ\Cachet\Repositories\Metric\MetricRepository;
 use Exception;
 use GrahamCampbell\Binput\Facades\Binput;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
@@ -114,6 +117,7 @@ class StatusPageController extends AbstractApiController
 
     /**
      * Shows an incident in more detail.
+     * Also converts IncidentsHistory objects to IncidentsHistoryPresenter object for the view.
      *
      * @param \CachetHQ\Cachet\Models\Incident $incident
      *
@@ -121,8 +125,18 @@ class StatusPageController extends AbstractApiController
      */
     public function showIncident(Incident $incident)
     {
+        $incidentHistory=$incident->history()->getResults();
+
+        $presenterHistory = new Collection();
+        /** @var IncidentsHistory $singleHistory */
+        foreach ($incidentHistory as $singleHistory)
+        {
+            $presenterHistory->add(new IncidentsHistoryPresenter($singleHistory));
+        }
+
         return View::make('single-incident')
-            ->withIncident($incident);
+            ->withIncident($incident)
+            ->withIncidentHistory($presenterHistory);
     }
 
     /**

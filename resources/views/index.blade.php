@@ -23,6 +23,13 @@
 </div>
 @endif
 
+{{--@if(!$uptime_statistics->isEmpty())--}}
+@if(true)
+<div class="section-uptime">
+    @include('partials.uptime')
+</div>
+@endif
+
 @if(!$scheduled_maintenance->isEmpty())
 <div class="section-scheduled">
     @include('partials.schedule')

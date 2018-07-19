@@ -17,8 +17,11 @@ use CachetHQ\Cachet\Bus\Commands\Incident\ReportIncidentCommand;
 use CachetHQ\Cachet\Bus\Commands\Incident\UpdateIncidentCommand;
 use CachetHQ\Cachet\Models\Component;
 use CachetHQ\Cachet\Models\ComponentGroup;
+use CachetHQ\Cachet\Models\Downtime;
 use CachetHQ\Cachet\Models\Incident;
+use CachetHQ\Cachet\Models\IncidentsHistory;
 use CachetHQ\Cachet\Models\IncidentTemplate;
+use Carbon\Carbon;
 use GrahamCampbell\Binput\Facades\Binput;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Redirect;
@@ -100,7 +103,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Creates a new incident.
+     * Creates a new incident and saves it in incidentHistories.
      *
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -119,12 +122,46 @@ class IncidentController extends Controller
                 null,
                 null
             ));
+            // Add the new incident to incidentHistory
+            $incidentHistoryAttributes = array(
+                'incidents_id' => $incident['id'],
+                'status' => $incident['status'],
+                'message' => $incident['message'],
+                'created_at' => $incident['created_at'],
+                'updated_at' => $incident['updated_at']
+            );
+            IncidentsHistory::create($incidentHistoryAttributes);
+
+            // Create a new downtime if no unresolved downtime exists
+            if (!Downtime::whereNull('resolved_at')->first() && $incident['status'] != 4)
+            {
+                $downtimeAttributes = array(
+                    'created_at' => $incident['created_at'],
+                    'resolved_at' => null
+                );
+                Downtime::create($downtimeAttributes);
+            }
         } catch (ValidationException $e) {
             return Redirect::route('dashboard.incidents.add')
                 ->withInput(Binput::all())
                 ->withTitle(sprintf('%s %s', trans('dashboard.notifications.whoops'), trans('dashboard.incidents.add.failure')))
                 ->withErrors($e->getMessageBag());
         }
+
+        // On every action on an Incident, we create a related entry into the IncidentHistories table.
+        // That allows us to show the complete history of an Incident.
+        $incidentsCollection = Incident::all();
+        foreach ($incidentsCollection as $incident);
+        $attributes = $incident['attributes'];
+
+        $incidentsHistoriesAttributes = array(
+            'incidents_id' => $attributes['id'],
+            'status' => $attributes['status'],
+            'message' => $attributes['message'],
+            'created_at' => $attributes['created_at'],
+            'updated_at' => $attributes['updated_at']
+        );
+        IncidentsHistory::create($incidentsHistoriesAttributes);
 
         return Redirect::route('dashboard.incidents.index')
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.add.success')));
@@ -191,7 +228,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Deletes a given incident.
+     * Soft deletes a given incident and the incidentsHistory.
      *
      * @param \CachetHQ\Cachet\Models\Incident $incident
      *
@@ -200,6 +237,28 @@ class IncidentController extends Controller
     public function deleteIncidentAction(Incident $incident)
     {
         dispatch(new RemoveIncidentCommand($incident));
+
+        $incidentAttributes = $incident['attributes'];
+        $incidentsHistoriesCollection = IncidentsHistory::all();
+
+        /** @var IncidentsHistory $incidentsHistory */
+        foreach ($incidentsHistoriesCollection as $incidentsHistory)
+        {
+            $incidentsHistoryAttributes = $incidentsHistory['attributes'];
+            if ($incidentsHistoryAttributes['incidents_id'] == $incidentAttributes['id'])
+            {// found matching IncidentHistory, delete it...
+                $incidentsHistory->delete();
+            }
+        }
+
+        // End the current downtime if no incidents are left open
+        // Status 4 equals resolved
+        if (Incident::where('status', "<", 4)->get()->isEmpty())
+        {
+            $downtime = Downtime::whereNull('resolved_at')->first();
+            $downtime->resolved_at = Carbon::createFromDate($incidentsHistoryAttributes['deleted_at']);
+            $downtime->save();
+        }
 
         return Redirect::route('dashboard.incidents.index')
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.delete.success')));
@@ -222,7 +281,7 @@ class IncidentController extends Controller
     }
 
     /**
-     * Edit an incident.
+     * Edit an incident and update the incidentsHistory.
      *
      * @param \CachetHQ\Cachet\Models\Incident $incident
      *
@@ -244,6 +303,22 @@ class IncidentController extends Controller
                 null,
                 null
             ));
+
+            // We have an unresolved downtime and the incident gets resolved. Status 4
+            if (Downtime::whereNull('resolved_at')->first() && $incident['status'] == 4)
+            {
+                $downtime = Downtime::whereNull('resolved_at')->first();
+                $downtime->resolved_at = Carbon::createFromFormat("Y-m-d H:i:s", $incident->updated_at);
+                $downtime->save();
+            }
+            elseif (!Downtime::whereNull('resolved_at')->first() && $incident['status'] != 4)
+            {
+                $downtimeAttributes = array(
+                    'created_at' => $incident['created_at'],
+                    'resolved_at' => null
+                );
+                Downtime::create($downtimeAttributes);
+            }
         } catch (ValidationException $e) {
             return Redirect::route('dashboard.incidents.edit', ['id' => $incident->id])
                 ->withInput(Binput::all())
@@ -251,9 +326,28 @@ class IncidentController extends Controller
                 ->withErrors($e->getMessageBag());
         }
 
-        if ($incident->component) {
-            $incident->component->update(['status' => Binput::get('component_status')]);
+        if ($incident->component) $incident->component->update(['status' => Binput::get('component_status')]);
+
+        // Update the IncidentsHistories table
+        $incidentAttributes = $incident['attributes'];
+        $incidentsHistoriesCollection = IncidentsHistory::all();
+
+        /** @var IncidentsHistory $incidentsHistory */
+        foreach ($incidentsHistoriesCollection as $incidentsHistory)
+        {
+            $incidentsHistoryAttributes = $incidentsHistory['attributes'];
+            if ($incidentsHistoryAttributes['incidents_id'] == $incidentAttributes['id'])
+            {// found matching IncidentHistory - do updates...
+                $incidentsHistoriesAttributes = array(
+                    'incidents_id' => $incidentAttributes['id'],
+                    'status' => $incidentAttributes['status'],
+                    'message' => $incidentAttributes['message'],
+                    'created_at' => $incidentAttributes['created_at'],
+                    'updated_at' => $incidentAttributes['updated_at']
+                );
+            }
         }
+        $incidentsHistory->create($incidentsHistoriesAttributes);
 
         return Redirect::route('dashboard.incidents.edit', ['id' => $incident->id])
             ->withSuccess(sprintf('%s %s', trans('dashboard.notifications.awesome'), trans('dashboard.incidents.edit.success')));
